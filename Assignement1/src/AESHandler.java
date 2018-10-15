@@ -1,3 +1,5 @@
+import java.math.BigInteger;
+
 /**
  * A class used to encrypt or decrypt
  * symmetrically using the AES encryption
@@ -205,12 +207,13 @@ public class AESHandler {
     byte[] encodeBlock(byte[] data, byte[][] keyList) {
         data = addkey(data, keyList[0]); //Keywhitening
 
-
         for (int i = 1; i < rounds - 2; i++) {
             data = subBytes(data);
             data = shiftRows(data);
             data = mixColumns(data);
             data = addkey(data, keyList[i]);
+
+            if (i == 1) System.out.println(new BigInteger(data).toString(16)); //Print first round
         }
 
         data = subBytes(data);
@@ -242,6 +245,9 @@ public class AESHandler {
 
         cipher = inv_shiftRows(cipher);
         cipher = inv_subBytes(cipher);
+
+        //Print first round
+        System.out.println(new BigInteger(cipher).toString(16));
 
         for (int i = 1; i < rounds - 2; i++) {
             cipher = addkey(cipher, keyList[keyList.length - i - 1]);
