@@ -9,7 +9,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * TODO: Describe test
+ * Test to verify the reversability of the encryption functions
  *
  * @author RakNoel
  * @version 1.0
