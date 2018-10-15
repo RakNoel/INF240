@@ -202,10 +202,11 @@ public class AESHandler {
         return result;
     }
 
-    private byte[] encodeBlock(byte[] data, byte[][] keyList) {
+    byte[] encodeBlock(byte[] data, byte[][] keyList) {
         data = addkey(data, keyList[0]); //Keywhitening
 
-        for (int i = 1; i < rounds - 1; i++) {
+
+        for (int i = 1; i < rounds - 2; i++) {
             data = subBytes(data);
             data = shiftRows(data);
             data = mixColumns(data);
@@ -214,12 +215,49 @@ public class AESHandler {
 
         data = subBytes(data);
         data = shiftRows(data);
-        data = addkey(data, keyList[keys - 1]);
+        data = addkey(data, keyList[keyList.length - 1]);
 
         return data;
     }
 
-    private byte[] mixColumns(byte[] state) {
+    public byte[] decode(byte[] cipher, byte[] key) {
+        byte[][] keyList = expandKeys(key);
+        byte[] result = new byte[cipher.length];
+        int pointer = 0;
+        int innfill = 0;
+        while (pointer < cipher.length) {
+            byte[] part = new byte[16];
+            for (int i = 0; i < part.length; i++)
+                part[i] = (pointer < cipher.length) ? cipher[pointer++] : 0x00;
+            part = decodeBlock(part, keyList);
+
+            for (int i = 0; i < part.length && innfill < result.length; i++)
+                result[innfill++] = part[i];
+        }
+        return result;
+    }
+
+    byte[] decodeBlock(byte[] cipher, byte[][] keyList) {
+        cipher = addkey(cipher, keyList[keyList.length - 1]); //Keywhitening
+
+        cipher = inv_shiftRows(cipher);
+        cipher = inv_subBytes(cipher);
+
+        for (int i = 1; i < rounds - 2; i++) {
+            cipher = addkey(cipher, keyList[keyList.length - i - 1]);
+            cipher = inv_mixColumns(cipher);
+            cipher = inv_shiftRows(cipher);
+            cipher = inv_subBytes(cipher);
+        }
+
+        cipher = addkey(cipher, keyList[0]);
+
+        return cipher;
+    }
+
+    ///////
+
+    byte[] mixColumns(byte[] state) {
         byte[] tmp = new byte[16];
         tmp[0] = (byte) (mul2[state[0] & 0xFF] ^ mul3[state[1] & 0xFF] ^ state[2] ^ state[3]);
         tmp[1] = (byte) (state[0] ^ mul2[state[1] & 0xFF] ^ mul3[state[2] & 0xFF] ^ state[3]);
@@ -244,7 +282,7 @@ public class AESHandler {
         return tmp;
     }
 
-    private byte[] inv_mixColumns(byte[] state) {
+    byte[] inv_mixColumns(byte[] state) {
         byte[] tmp = new byte[16];
         tmp[0] = (byte) (mul14[state[0] & 0xFF] ^ mul11[state[1] & 0xFF] ^ mul13[state[2] & 0xFF] ^ mul9[state[3] & 0xFF]);
         tmp[1] = (byte) (mul9[state[0] & 0xFF] ^ mul14[state[1] & 0xFF] ^ mul11[state[2] & 0xFF] ^ mul13[state[3] & 0xFF]);
@@ -269,77 +307,80 @@ public class AESHandler {
         return tmp;
     }
 
-    private byte[] shiftRows(byte[] state) {
+    byte[] shiftRows(byte[] state) {
         byte[] tmp = new byte[16];
 
         tmp[0] = state[0];
-        tmp[1] = state[4];
-        tmp[2] = state[8];
-        tmp[3] = state[12];
+        tmp[1] = state[1];
+        tmp[2] = state[2];
+        tmp[3] = state[3];
 
         tmp[4] = state[5];
-        tmp[5] = state[9];
-        tmp[6] = state[13];
-        tmp[7] = state[1];
+        tmp[5] = state[6];
+        tmp[6] = state[7];
+        tmp[7] = state[4];
 
         tmp[8] = state[10];
-        tmp[9] = state[14];
-        tmp[10] = state[2];
-        tmp[11] = state[6];
+        tmp[9] = state[11];
+        tmp[10] = state[8];
+        tmp[11] = state[9];
 
         tmp[12] = state[15];
-        tmp[13] = state[3];
-        tmp[14] = state[7];
-        tmp[15] = state[11];
+        tmp[13] = state[12];
+        tmp[14] = state[13];
+        tmp[15] = state[14];
 
         return tmp;
     }
 
-    private byte[] inv_shiftRows(byte[] state) {
+    byte[] inv_shiftRows(byte[] state) {
         byte[] tmp = new byte[16];
 
         tmp[0] = state[0];
-        tmp[1] = state[4];
-        tmp[2] = state[8];
-        tmp[3] = state[12];
+        tmp[1] = state[1];
+        tmp[2] = state[2];
+        tmp[3] = state[3];
 
-        tmp[4] = state[13];
-        tmp[5] = state[1];
+        tmp[4] = state[7];
+        tmp[5] = state[4];
         tmp[6] = state[5];
-        tmp[7] = state[9];
+        tmp[7] = state[6];
 
         tmp[8] = state[10];
-        tmp[9] = state[14];
-        tmp[10] = state[2];
-        tmp[11] = state[6];
+        tmp[9] = state[11];
+        tmp[10] = state[8];
+        tmp[11] = state[9];
 
-        tmp[12] = state[7];
-        tmp[13] = state[11];
+        tmp[12] = state[13];
+        tmp[13] = state[14];
         tmp[14] = state[15];
-        tmp[15] = state[3];
+        tmp[15] = state[12];
 
         return tmp;
     }
 
-    private byte[] subBytes(byte[] state) {
-        for (int i = 0; i < state.length; i++)
-            state[i] = (byte) sbox[(state[i] & 0xFF)];
-        return state;
+    byte[] subBytes(byte[] state) {
+        byte[] tmp = new byte[state.length];
+        for (int i = 0; i < tmp.length; i++)
+            tmp[i] = (byte) sbox[(state[i] & 0xFF)];
+        return tmp;
     }
 
-    private byte[] inv_subBytes(byte[] state) {
+    byte[] inv_subBytes(byte[] state) {
         for (int i = 0; i < state.length; i++)
             state[i] = (byte) inv_sbox[(state[i] & 0xFF)];
         return state;
     }
 
-    private byte[] addkey(byte[] data, byte[] key) {
+    byte[] addkey(byte[] data, byte[] key) {
+        byte[] tmp = new byte[data.length];
+
         for (int i = 0; i < data.length; i++)
-            data[i] ^= key[i];
-        return data;
+            tmp[i] = (byte) (data[i] ^ key[i]);
+        return tmp;
     }
 
-    private byte[][] expandKeys(byte[] key) {
+    byte[][] expandKeys(byte[] key) {
         byte[][] words = new byte[keys * 4][4];
         for (int k = 0; k < words[0].length; k++)
             for (int t = 0; t < words[0].length; t++)
@@ -377,7 +418,7 @@ public class AESHandler {
         return subkeys;
     }
 
-    private byte[] g(byte[] x, int rc) {
+    byte[] g(byte[] x, int rc) {
         byte[] tmp = x;
         tmp[0] = x[1];
         tmp[1] = x[2];
@@ -390,48 +431,13 @@ public class AESHandler {
         return tmp;
     }
 
-    private byte[] xor(byte[] x, byte[] y) {
+    byte[] xor(byte[] x, byte[] y) {
         assert (x.length == y.length);
         byte[] tmp = new byte[x.length];
         for (int i = 0; i < x.length; i++)
             tmp[i] = (byte) (x[i] ^ y[i]);
 
         return tmp;
-    }
-
-    public byte[] decode(byte[] cipher, byte[] key) {
-        byte[][] keyList = expandKeys(key);
-        byte[] result = new byte[cipher.length + (cipher.length % 16)];
-        int pointer = 0;
-        int innfill = 0;
-        while (pointer < cipher.length) {
-            byte[] part = new byte[16];
-            for (int i = 0; i < part.length; i++)
-                part[i] = (pointer < cipher.length) ? cipher[pointer++] : 0x00;
-            part = decodeBlock(part, keyList);
-
-            for (int i = 0; i < part.length && innfill < result.length; i++)
-                result[innfill++] = part[i];
-        }
-        return result;
-    }
-
-    private byte[] decodeBlock(byte[] cipher, byte[][] keyList) {
-        cipher = addkey(cipher, keyList[keys - 1]); //Keywhitening
-
-        cipher = inv_shiftRows(cipher);
-        cipher = inv_subBytes(cipher);
-
-        for (int i = 1; i < rounds - 1; i++) {
-            cipher = addkey(cipher, keyList[keys - i - 1]);
-            cipher = inv_mixColumns(cipher);
-            cipher = inv_shiftRows(cipher);
-            cipher = inv_subBytes(cipher);
-        }
-
-        cipher = addkey(cipher, keyList[0]);
-
-        return cipher;
     }
 
 }

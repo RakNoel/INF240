@@ -20,7 +20,7 @@ public class bootstrap {
         LFSR AliceLFSR = new LFSR(recurrence, seed);
 
         byte[] secretAESKey = AliceLFSR.getKeyStream(128);
-
+        System.out.println(new BigInteger(secretAESKey).toString(16));
 
         BigInteger bobN = new BigInteger("00:af:09:83:ad:69:61:1f:8e:5d:a1:20:6f:ce:63:8f:7b:b7:f0:3e:5a:f5:36:67:88:d7:11:26:a9:45:e9:f8:c7".replace(":", ""), 16);
         BigInteger bobPublicKey = new BigInteger("2").pow(16).add(new BigInteger("1"));
