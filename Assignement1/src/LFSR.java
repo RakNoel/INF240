@@ -37,7 +37,7 @@ public class LFSR {
      */
     public byte[] getKeyStream(int length) {
         assert (length % 8 == 0);
-        byte[] key = new byte[length % 8];
+        byte[] key = new byte[length / 8];
 
         for (int i = 0; i < key.length; i++)
             key[i] = this.getNextByte();

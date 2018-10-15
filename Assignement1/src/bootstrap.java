@@ -30,6 +30,10 @@ public class bootstrap {
         System.out.println(c1);
 
         byte[] c2 = aes.encode(secretText.getBytes(), secretAESKey);
+        for (byte letter : c2)
+            System.out.print((char) letter);
+        System.out.println();
+
 
         //Bob knows
         BigInteger bobPrivateKey = new BigInteger("58:7c:9b:d7:cf:bd:2c:c1:c0:ed:92:c3:52:f8:1b:f1:5e:68:be:b0:b3:7c:cd:b0:4e:37:b4:3f:71:11:5a:31".replace(":", ""), 16);
@@ -42,5 +46,6 @@ public class bootstrap {
 
         for (byte letter : recievedSecretText)
             System.out.print((char) letter);
+        System.out.println();
     }
 }
